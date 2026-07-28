@@ -1,18 +1,23 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0057)file:///C:/Users/abobo/Downloads/fireworks-display_2.html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>花火玉ディスプレイ</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;font-family:"Hiragino Sans","Yu Gothic",sans-serif;color:#fff}
 #stage{position:fixed;inset:0;overflow:hidden}
 #ballLayer{position:absolute;inset:0;z-index:5}
-.firework-ball{position:absolute;width:112px;height:112px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transform-origin:center;animation:floatBall var(--duration,4s) ease-in-out infinite;filter:drop-shadow(0 9px 10px rgba(0,0,0,.45));user-select:none}
-.firework-ball::before{content:"";position:absolute;inset:8px;border:4px solid rgba(255,255,255,.45);border-radius:50%;box-shadow:inset 0 0 20px rgba(255,255,255,.22)}
-.firework-ball::after{content:"";position:absolute;width:5px;height:26px;bottom:-21px;left:54px;background:linear-gradient(#d8c08b,#7f6033);border-radius:4px;transform:rotate(var(--fuse,8deg));transform-origin:top}
-.ball-icon{font-size:46px;z-index:1;text-shadow:0 2px 5px rgba(0,0,0,.4)}
-.ball-name{position:absolute;top:118px;left:50%;transform:translateX(-50%);font-weight:bold;font-size:18px;white-space:nowrap;text-shadow:0 2px 5px #000,0 0 8px #000;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+#miniLayer{position:absolute;inset:0;z-index:3;pointer-events:none}
+.firework-ball{position:absolute;width:var(--size,112px);height:var(--size,112px);border-radius:50%;cursor:pointer;transform-origin:center;animation:floatBall var(--duration,4s) ease-in-out infinite;filter:drop-shadow(0 9px 10px rgba(0,0,0,.45));user-select:none}
+.firework-ball::before{content:"";position:absolute;inset:8%;border:4px solid rgba(255,255,255,.45);border-radius:50%;box-shadow:inset 0 0 20px rgba(255,255,255,.22)}
+.firework-ball::after{content:"";position:absolute;width:5px;height:23%;bottom:-19%;left:48%;background:linear-gradient(#d8c08b,#7f6033);border-radius:4px;transform:rotate(var(--fuse,8deg));transform-origin:top}
+.mini{position:absolute;width:var(--size,64px);height:var(--size,64px);animation:miniFloat 6.5s ease-in-out infinite}
+.mini .burst{position:absolute;inset:0;border-radius:50%;background:repeating-conic-gradient(from var(--rot,0deg),var(--c,#ffd54f) 0deg 1.5deg,transparent 1.5deg 15deg);-webkit-mask-image:radial-gradient(circle,#fff 0 6%,rgba(255,255,255,.85) 26%,transparent 70%);mask-image:radial-gradient(circle,#fff 0 6%,rgba(255,255,255,.85) 26%,transparent 70%);animation:twinkle var(--tw,3s) ease-in-out infinite alternate}
+.mini .core{position:absolute;left:50%;top:50%;width:15%;height:15%;transform:translate(-50%,-50%);border-radius:50%;background:#fff;box-shadow:0 0 10px var(--c,#ffd54f),0 0 22px var(--c,#ffd54f)}
+.mini .mini-name{position:absolute;top:94%;left:50%;transform:translateX(-50%);font-size:13px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,.92);text-shadow:0 2px 5px #000,0 0 8px #000}
+@keyframes miniFloat{0%,100%{transform:translateY(-3px)}50%{transform:translateY(4px)}}
+@keyframes twinkle{from{opacity:.55;transform:scale(.92)}to{opacity:1;transform:scale(1.06)}}
 @keyframes floatBall{0%,100%{transform:translateY(-6px) rotate(-2deg)}50%{transform:translateY(9px) rotate(2deg)}}
 
 #popup{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.58);padding:30px}
@@ -25,21 +30,23 @@
 #launchBall{position:fixed;width:130px;height:130px;border-radius:50%;z-index:180;display:none;align-items:center;justify-content:center;font-size:54px;filter:drop-shadow(0 8px 12px #000);pointer-events:none}#launchBall.fly{display:flex;animation:launchFly 1.35s cubic-bezier(.25,.8,.35,1) forwards}@keyframes launchFly{0%{left:50%;top:68%;transform:translate(-50%,-50%) scale(1);opacity:1}75%{left:50%;top:14%;transform:translate(-50%,-50%) scale(.68);opacity:1}100%{left:50%;top:-10%;transform:translate(-50%,-50%) scale(.35);opacity:0}}
 #flash{position:fixed;inset:0;z-index:185;background:#fff;opacity:0;pointer-events:none}#flash.show{animation:flash .55s ease}@keyframes flash{0%{opacity:0}30%{opacity:.92}100%{opacity:0}}
 
-#video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;background:#000;z-index:200}#video.show{display:block}
-#caption{position:fixed;left:50%;bottom:7%;transform:translateX(-50%);width:min(90%,1000px);text-align:center;color:#fff;display:none;text-shadow:0 3px 10px #000,0 0 18px #000;z-index:205}#caption.show{display:block;animation:captionPop .5s ease}@keyframes captionPop{from{opacity:0;transform:translate(-50%,30px) scale(.85)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+#backdrop{position:fixed;inset:0;z-index:198;display:none;background:radial-gradient(ellipse at 50% 45%,rgba(10,14,34,.62) 0,rgba(3,5,14,.86) 70%,rgba(0,0,0,.92) 100%)}#backdrop.show{display:block;animation:fadeIn .4s ease}@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+#videoWrap{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);height:84vh;width:calc(84vh * 0.5625);max-width:96vw;z-index:200;display:none;border-radius:22px;overflow:hidden;border:2px solid rgba(255,220,120,.32);box-shadow:0 0 70px rgba(255,190,60,.22),0 24px 70px rgba(0,0,0,.65)}#videoWrap.show{display:block;animation:stageIn .4s ease}@keyframes stageIn{from{opacity:0;transform:translate(-50%,-50%) scale(.94)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+#video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
+#caption{position:fixed;left:50%;bottom:3%;transform:translateX(-50%);width:min(90%,1000px);text-align:center;color:#fff;display:none;text-shadow:0 3px 10px #000,0 0 18px #000;z-index:205}#caption.show{display:block;animation:captionPop .5s ease}@keyframes captionPop{from{opacity:0;transform:translate(-50%,30px) scale(.85)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
 #captionMessage{font-size:clamp(28px,4vw,58px);font-weight:bold}#captionName{font-size:clamp(20px,2.7vw,38px);margin-top:12px;color:#ffe59a}
 #type{position:fixed;top:5%;right:5%;font-size:clamp(22px,3vw,44px);font-weight:bold;display:none;text-shadow:0 2px 10px #000;z-index:206}#type.show{display:block}#type.rare{color:#ffd54f;animation:pulse .65s infinite alternate}@keyframes pulse{to{transform:scale(1.12);filter:drop-shadow(0 0 16px #ffd54f)}}
 #fallback{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:210;background:rgba(0,0,0,.75);text-align:center;padding:40px}#fallback.show{display:flex}.fallback-main{font-size:clamp(30px,5vw,62px);font-weight:bold}.fallback-sub{font-size:clamp(18px,2.5vw,32px);margin-top:18px;color:#ffe59a}
-#status{position:fixed;left:16px;bottom:16px;z-index:300;padding:7px 11px;border-radius:9px;background:rgba(0,0,0,.48);font-size:15px;opacity:.8}#status.ready{color:#9dffb0}#status.error{color:#ff9d9d}
+#status{position:fixed;left:16px;bottom:16px;z-index:300;padding:7px 11px;border-radius:9px;background:rgba(0,0,0,.48);font-size:15px;opacity:.8;display:none}#status.ready{color:#9dffb0}#status.error{color:#ff9d9d}
 </style>
 </head>
 <body>
-<div id="stage"><div id="ballLayer"></div></div>
-<div id="popup"><div class="popup-card"><div id="popupBall" class="popup-ball">🎆</div><div id="popupMessage" class="popup-message"></div><div id="popupName" class="popup-name"><span class="name-placeholder">名前をタップして表示</span><span class="name-real"></span></div><button id="launchBtn">🚀 この花火玉を打ち上げる</button></div></div>
-<div id="launchBall">🎆</div><div id="flash"></div>
-<video id="video" playsinline preload="auto"></video><div id="type"></div><div id="caption"><div id="captionMessage"></div><div id="captionName"></div></div>
+<div id="stage"><div id="miniLayer"></div><div id="ballLayer"><div class="firework-ball" style="background: radial-gradient(circle at 35% 28%, rgb(255, 255, 255) 0px, rgb(255, 255, 255) 5%, rgb(239, 83, 80) 22%, rgb(239, 83, 80) 58%, rgb(52, 21, 44) 100%); left: 325px; top: 382.64px; --size: 112px; --duration: 4.5s; --fuse: -8deg; animation-delay: -593ms;"></div><div class="firework-ball" style="background: radial-gradient(circle at 35% 28%, rgb(255, 255, 255) 0px, rgb(255, 255, 255) 5%, rgb(239, 83, 80) 22%, rgb(239, 83, 80) 58%, rgb(52, 21, 44) 100%); left: 918px; top: 393.64px; --size: 112px; --duration: 4.9s; --fuse: -10deg; animation-delay: -2823ms;"></div></div></div>
+<div id="popup" class=""><div class="popup-card"><div id="popupBall" class="popup-ball" style="background: radial-gradient(circle at 35% 28%, rgb(255, 255, 255) 0px, rgb(255, 255, 255) 5%, rgb(239, 83, 80) 22%, rgb(239, 83, 80) 58%, rgb(52, 21, 44) 100%);"></div><div id="popupMessage" class="popup-message">テスト</div><div id="popupName" class="popup-name revealed"><span class="name-placeholder">名前をタップして表示</span><span class="name-real">ABO さん</span></div><button id="launchBtn">🚀 この花火玉を打ち上げる</button></div></div>
+<div id="launchBall"></div><div id="flash"></div>
+<div id="backdrop"></div><div id="videoWrap"><video id="video" playsinline="" preload="auto"></video></div><div id="type"></div><div id="caption"><div id="captionMessage"></div><div id="captionName"></div></div>
 <div id="fallback"><div><div id="fallbackMain" class="fallback-main"></div><div id="fallbackSub" class="fallback-sub"></div></div></div>
-<div id="status">Firebase接続中…</div>
+<div id="status" class="ready">接続済み・花火玉 2個</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getDatabase,ref,onValue,set,push,remove,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -49,25 +56,69 @@ const db=getDatabase(initializeApp(firebaseConfig));
 const files={A:"videos/firework-a.mp4",B:"videos/firework-b.mp4",C:"videos/firework-c.mp4",D:"videos/firework-d.mp4"};
 const colors=["#e8534f","#f3b33d","#5fae6a","#5b8fd6","#a07fd6","#e86ca4"];
 const layer=document.getElementById("ballLayer"),popup=document.getElementById("popup"),video=document.getElementById("video"),statusEl=document.getElementById("status");
-let entries=[],selected=null,playing=false,queued=null,initialized=false,lastNonce="",launchLock=false;
+const backdrop=document.getElementById("backdrop"),videoWrap=document.getElementById("videoWrap"),miniLayer=document.getElementById("miniLayer");
+// ?debug=1 を付けて開いた時だけ左下に接続状態を表示します（OBSでは付けない）
+if(new URLSearchParams(location.search).has("debug"))statusEl.style.display="block";
+function showStage(on){backdrop.classList.toggle("show",on);videoWrap.classList.toggle("show",on)}
+let entries=[],launched=[],selected=null,playing=false,queued=null,initialized=false,lastNonce="",launchLock=false;
 const safe=s=>String(s??"");
 function setStatus(text,cls=""){statusEl.textContent=text;statusEl.className=cls}
 function hash(str){let h=0;for(const ch of str)h=(h*31+ch.charCodeAt(0))>>>0;return h}
 function drawType(){const r=Math.random()*100;return r<30?"A":r<60?"B":r<90?"C":"D"}
-function renderBalls(){layer.innerHTML="";const w=Math.max(innerWidth,320),h=Math.max(innerHeight,500);entries.forEach((item,i)=>{const seed=hash(item.id);const el=document.createElement("div");el.className="firework-ball";const color=item.color||colors[seed%colors.length];el.style.background=`radial-gradient(circle at 35% 28%,#fff 0 5%,${color} 22%,${color} 58%,#34152c 100%)`;const cols=Math.max(3,Math.floor(w/160)),col=i%cols,row=Math.floor(i/cols);const cellW=w/cols;const x=Math.max(8,Math.min(w-125,col*cellW+(seed%Math.max(20,cellW-120))));const availableH=Math.max(240,h-210);const rows=Math.max(1,Math.ceil(entries.length/cols));const cellH=Math.min(190,availableH/rows);const y=Math.max(25,Math.min(h-160,35+row*cellH+((seed>>8)%35)));el.style.left=x+"px";el.style.top=y+"px";el.style.setProperty("--duration",(3.4+(seed%18)/10)+"s");el.style.setProperty("--fuse",((seed%21)-10)+"deg");el.style.animationDelay=-(seed%3000)+"ms";el.innerHTML=`<span class="ball-icon">🎆</span><span class="ball-name"></span>`;el.querySelector(".ball-name").textContent=safe(item.name||"名無し");el.addEventListener("click",()=>openPopup(item,color));layer.appendChild(el)})}
+// 待機中の花火玉：画面の下半分に配置（名前・絵文字なし）
+function renderBalls(){layer.innerHTML="";const w=Math.max(innerWidth,320),h=Math.max(innerHeight,500);const n=entries.length;if(!n)return;
+const size=n>24?74:n>14?92:112;
+const top=h*0.52,bottom=h-size*1.35,bandH=Math.max(90,bottom-top);
+const cols=Math.min(Math.max(3,Math.floor((w-30)/(size+34))),n);
+const rows=Math.max(1,Math.ceil(n/cols));
+const cellW=(w-30)/cols,cellH=bandH/rows;
+entries.forEach((item,i)=>{const seed=hash(item.id);const col=i%cols,row=Math.floor(i/cols);
+const color=item.color||colors[seed%colors.length];
+const x=15+col*cellW+(seed%Math.max(6,Math.floor(cellW-size)));
+const y=top+row*cellH+((seed>>8)%Math.max(6,Math.floor(cellH-size)));
+const el=document.createElement("div");el.className="firework-ball";
+el.style.background=`radial-gradient(circle at 35% 28%,#fff 0 5%,${color} 22%,${color} 58%,#34152c 100%)`;
+el.style.left=x+"px";el.style.top=y+"px";el.style.setProperty("--size",size+"px");
+el.style.setProperty("--duration",(3.4+(seed%18)/10)+"s");el.style.setProperty("--fuse",((seed%21)-10)+"deg");
+el.style.animationDelay=-(seed%3000)+"ms";
+el.addEventListener("click",()=>openPopup(item,color));layer.appendChild(el)})}
+
+// 打ち上げ済み：夜空にミニ花火として名前付きで浮かべる（画面の上半分）
+function renderMinis(){miniLayer.innerHTML="";const w=Math.max(innerWidth,320),h=Math.max(innerHeight,500);const n=launched.length;if(!n)return;
+const size=n>30?46:n>16?58:70;
+const top=h*0.05,bandH=Math.max(90,h*0.42-top);
+const cols=Math.min(Math.max(3,Math.floor((w-60)/(size+72))),n);
+const rows=Math.max(1,Math.ceil(n/cols));
+const cellW=(w-60)/cols,cellH=bandH/rows;
+launched.forEach((item,i)=>{const seed=hash(item.id);const col=i%cols,row=Math.floor(i/cols);
+const color=item.color||colors[seed%colors.length];
+const x=30+col*cellW+(seed%Math.max(6,Math.floor(cellW-size)));
+const y=top+row*cellH+((seed>>7)%Math.max(6,Math.floor(cellH-size-20)));
+const el=document.createElement("div");el.className="mini";
+el.style.left=x+"px";el.style.top=y+"px";
+el.style.setProperty("--size",size+"px");el.style.setProperty("--c",color);
+el.style.setProperty("--rot",(seed%30)+"deg");el.style.setProperty("--tw",(2.4+(seed%22)/10)+"s");
+el.style.animationDelay=-(seed%4500)+"ms";
+el.innerHTML='<div class="burst"></div><div class="core"></div><div class="mini-name"></div>';
+el.querySelector(".mini-name").textContent=safe(item.name||"名無し");
+miniLayer.appendChild(el)})}
 function openPopup(item,color){if(playing)return;selected=item;const pb=document.getElementById("popupBall");pb.style.background=`radial-gradient(circle at 35% 28%,#fff 0 5%,${color} 22%,${color} 58%,#34152c 100%)`;document.getElementById("popupMessage").textContent=safe(item.message||"メッセージなし");const nameBox=document.getElementById("popupName");nameBox.classList.remove("revealed");nameBox.querySelector(".name-real").textContent=`${safe(item.name||"名無し")} さん`;document.getElementById("launchBtn").disabled=false;popup.classList.add("show")}
 function closePopup(){if(launchLock)return;popup.classList.remove("show");selected=null}
 document.getElementById("popupName").addEventListener("click",e=>{e.stopPropagation();e.currentTarget.classList.add("revealed")});
 popup.addEventListener("click",e=>{if(e.target===popup)closePopup()});
-async function sendLaunch(type,item){const data={name:item.name||"名無し",message:item.message||"",color:item.color||"#ffd54f",type,entryId:item.id||"",nonce:crypto.randomUUID?.()||String(Date.now())+Math.random(),launchedAt:serverTimestamp()};await set(ref(db,"fireworks/currentLaunch"),data);return data}
+async function sendLaunch(type,item){const data={name:item.name||"名無し",message:item.message||"",color:item.color||"#ffd54f",type,entryId:item.id||"",nonce:crypto.randomUUID?.()||String(Date.now())+Math.random(),launchedAt:serverTimestamp()};lastNonce=data.nonce;/* 自分で送った分をonValue側で二重再生しないよう先に記録 */await set(ref(db,"fireworks/currentLaunch"),data);return data}
 async function launchSelected(){if(!selected||launchLock)return;launchLock=true;document.getElementById("launchBtn").disabled=true;const item={...selected};const type=drawType();try{popup.classList.remove("show");await animateLaunch(item);const data=await sendLaunch(type,item);await push(ref(db,"fireworks/history"),{name:item.name||"名無し",message:item.message||"",color:item.color||"#ffd54f",type,launchedAt:serverTimestamp()});await remove(ref(db,`fireworks/entries/${item.id}`));selected=null;await playLaunch(data)}catch(e){console.error(e);setStatus("打ち上げ処理に失敗しました","error")}finally{setTimeout(()=>launchLock=false,600)}}
 document.getElementById("launchBtn").onclick=launchSelected;
 function animateLaunch(item){return new Promise(resolve=>{const el=document.getElementById("launchBall");el.style.background=`radial-gradient(circle at 35% 28%,#fff 0 5%,${item.color||'#ffd54f'} 22%,${item.color||'#ffd54f'} 58%,#34152c 100%)`;el.classList.remove("fly");void el.offsetWidth;el.classList.add("fly");setTimeout(()=>{document.getElementById("flash").classList.add("show");setTimeout(()=>document.getElementById("flash").classList.remove("show"),600);el.classList.remove("fly");resolve()},1280)})}
 function showFallback(data,reason){document.getElementById("fallbackMain").textContent=`🎆 花火 ${data.type} を打ち上げ！`;document.getElementById("fallbackSub").textContent=reason||`${safe(data.name||"名無し")} さん`;document.getElementById("fallback").classList.add("show");setTimeout(()=>document.getElementById("fallback").classList.remove("show"),3500)}
-async function playLaunch(data){if(!data?.type||!files[data.type])return;if(playing){queued=data;return}playing=true;document.getElementById("captionMessage").textContent=safe(data.message);document.getElementById("captionName").textContent=`${safe(data.name||"名無し")} さんの花火`;const typeEl=document.getElementById("type");typeEl.textContent=data.type==="D"?"✨ レア花火 D ✨":`花火 ${data.type}`;typeEl.className="show"+(data.type==="D"?" rare":"");document.getElementById("caption").classList.add("show");video.src=files[data.type];video.currentTime=0;video.classList.add("show");let finished=false;const finish=()=>{if(finished)return;finished=true;video.pause();video.removeAttribute("src");video.load();video.classList.remove("show");document.getElementById("caption").classList.remove("show");typeEl.className="";playing=false;setStatus("接続済み・待機中","ready");if(queued){const next=queued;queued=null;setTimeout(()=>playLaunch(next),300)}};video.onerror=()=>{setStatus("動画ファイルが見つかりません","error");showFallback(data,"「動画」フォルダとMP4名を確認してください");finish()};video.onended=finish;try{await video.play();setStatus(`動画${data.type}を再生中`,`ready`)}catch(e){setStatus("動画を再生できません","error");showFallback(data,"OBSの音声・自動再生設定を確認してください");finish()}}
+async function playLaunch(data){if(!data?.type||!files[data.type])return;if(playing){queued=data;return}playing=true;document.getElementById("captionMessage").textContent=safe(data.message);document.getElementById("captionName").textContent=`${safe(data.name||"名無し")} さんの花火`;const typeEl=document.getElementById("type");typeEl.textContent=data.type==="D"?"✨ レア花火 D ✨":`花火 ${data.type}`;typeEl.className="show"+(data.type==="D"?" rare":"");document.getElementById("caption").classList.add("show");video.src=files[data.type];showStage(true);let finished=false;const finish=()=>{if(finished)return;finished=true;video.pause();video.removeAttribute("src");video.load();showStage(false);document.getElementById("caption").classList.remove("show");typeEl.className="";playing=false;setStatus("接続済み・待機中","ready");if(queued){const next=queued;queued=null;setTimeout(()=>playLaunch(next),300)}};video.onerror=()=>{setStatus("動画ファイルが見つかりません","error");showFallback(data,"「動画」フォルダとMP4名を確認してください");finish()};video.onended=finish;try{await video.play();setStatus(`動画${data.type}を再生中`,`ready`)}catch(e){setStatus("動画を再生できません","error");showFallback(data,"OBSの音声・自動再生設定を確認してください");finish()}}
 onValue(ref(db,"fireworks/entries"),snap=>{const data=snap.val()||{};entries=Object.entries(data).map(([id,v])=>({id,...v})).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));renderBalls();setStatus(`接続済み・花火玉 ${entries.length}個`,`ready`)},e=>{console.error(e);setStatus("Firebaseの読み込みに失敗","error")});
 onValue(ref(db,"fireworks/currentLaunch"),snap=>{const data=snap.val();if(!initialized){initialized=true;lastNonce=data?.nonce||"";return}if(!data?.nonce||data.nonce===lastNonce)return;lastNonce=data.nonce;if(data.entryId&&selected?.id===data.entryId)popup.classList.remove("show");playLaunch(data)});
-addEventListener("resize",renderBalls);
+// 夜空に残すミニ花火の上限（古いものから消えます）
+const MINI_LIMIT=45;
+onValue(ref(db,"fireworks/history"),snap=>{const data=snap.val()||{};launched=Object.entries(data).map(([id,v])=>({id,...v})).sort((a,b)=>(a.launchedAt||0)-(b.launchedAt||0)).slice(-MINI_LIMIT);renderMinis()},e=>console.error(e));
+addEventListener("resize",()=>{renderBalls();renderMinis()});
 </script>
-</body>
-</html>
+
+
+</body></html>
