@@ -33,8 +33,7 @@
 #backdrop{position:fixed;inset:0;z-index:198;display:none;background:radial-gradient(ellipse at 50% 45%,rgba(10,14,34,.62) 0,rgba(3,5,14,.86) 70%,rgba(0,0,0,.92) 100%)}#backdrop.show{display:block;animation:fadeIn .4s ease}@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 #videoWrap{position:fixed;inset:0;z-index:200;display:none}#videoWrap.show{display:block;animation:fadeIn .25s ease}
 #video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
-#caption{position:fixed;left:50%;bottom:3%;transform:translateX(-50%);width:min(90%,1000px);text-align:center;color:#fff;display:none;text-shadow:0 3px 10px #000,0 0 18px #000;z-index:205}#caption.show{display:block;animation:captionPop .5s ease}@keyframes captionPop{from{opacity:0;transform:translate(-50%,30px) scale(.85)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
-#captionMessage{font-size:clamp(28px,4vw,58px);font-weight:bold}#captionName{display:none}
+
 #fallback{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:210;background:rgba(0,0,0,.75);text-align:center;padding:40px}#fallback.show{display:flex}.fallback-main{font-size:clamp(30px,5vw,62px);font-weight:bold}.fallback-sub{font-size:clamp(18px,2.5vw,32px);margin-top:18px;color:#ffe59a}
 #halfLine{position:fixed;left:0;right:0;top:50%;height:2px;background:rgba(255,90,90,.75);z-index:299;display:none}
 #status{position:fixed;left:16px;bottom:16px;z-index:300;padding:7px 11px;border-radius:9px;background:rgba(0,0,0,.48);font-size:15px;opacity:.8;display:none}#status.ready{color:#9dffb0}#status.error{color:#ff9d9d}
@@ -44,7 +43,7 @@
 <div id="stage"><div id="miniLayer"></div><div id="ballLayer"></div></div>
 <div id="popup"><div class="popup-card"><div id="popupBall" class="popup-ball"></div><div id="popupMessage" class="popup-message"></div><div id="popupName" class="popup-name"><span class="name-placeholder">名前をタップして表示</span><span class="name-real"></span></div><button id="launchBtn">🚀 この花火玉を打ち上げる</button></div></div>
 <div id="launchBall"></div><div id="flash"></div>
-<div id="backdrop"></div><div id="videoWrap"><video id="video" playsinline preload="auto"></video></div><div id="caption"><div id="captionMessage"></div><div id="captionName"></div></div>
+<div id="backdrop"></div><div id="videoWrap"><video id="video" playsinline preload="auto"></video></div>
 <div id="fallback"><div><div id="fallbackMain" class="fallback-main"></div><div id="fallbackSub" class="fallback-sub"></div></div></div>
 <div id="halfLine"></div>
 <div id="status">Firebase接続中…</div>
@@ -55,10 +54,12 @@ const firebaseConfig={apiKey:"AIzaSyDKwFPNTgPJawD47WxuDsJH2-V1E3zWqoU",authDomai
 const db=getDatabase(initializeApp(firebaseConfig));
 // 動画フォルダは起動時に自動判定します（videos/ → 動画/ → video/ → movies/ → 同じ階層 の順に探索）
 // 動画は A〜J の10種類、各10%。レア演出は H・I・J
-const VERSION="v3 (A〜J / rare:HIJ)";
+const VERSION="v5 (A〜J / 確率可変 / 文字なし)";
 const TYPES=["A","B","C","D","E","F","G","H","I","J"];
 const RARE_TYPES=["H","I","J"];
 const isRare=t=>RARE_TYPES.includes(String(t||"").toUpperCase());
+// 抽選の重みは管理画面から変更でき、Firebase経由でここにも反映されます
+let weights=Object.fromEntries(TYPES.map(t=>[t,10]));
 const VIDEO_DIRS=["videos/","動画/","video/","movies/",""];
 let videoBase="videos/";
 // ファイル名は firework-a.mp4 形式で自動生成。種類を増やす時は TYPES に足すだけでOK
@@ -79,7 +80,7 @@ let entries=[],launched=[],selected=null,playing=false,queued=null,initialized=f
 const safe=s=>String(s??"");
 function setStatus(text,cls=""){statusEl.textContent=text;statusEl.className=cls}
 function hash(str){let h=0;for(const ch of str)h=(h*31+ch.charCodeAt(0))>>>0;return h}
-function drawType(){return TYPES[Math.floor(Math.random()*TYPES.length)]}
+function drawType(){const tot=TYPES.reduce((a,t)=>a+(Number(weights[t])||0),0);if(tot<=0)return TYPES[Math.floor(Math.random()*TYPES.length)];let r=Math.random()*tot;for(const t of TYPES){r-=Number(weights[t])||0;if(r<0)return t}return TYPES[TYPES.length-1]}
 // 待機中の花火玉：画面の下半分に配置（名前・絵文字なし）
 function renderBalls(){layer.innerHTML="";const w=Math.max(innerWidth,320),h=Math.max(innerHeight,500);const n=entries.length;if(!n)return;
 const size=n>24?74:n>14?92:112;
@@ -126,7 +127,7 @@ async function launchSelected(){if(!selected||launchLock)return;launchLock=true;
 document.getElementById("launchBtn").onclick=launchSelected;
 function animateLaunch(item){return new Promise(resolve=>{const el=document.getElementById("launchBall");el.style.background=`radial-gradient(circle at 35% 28%,#fff 0 5%,${item.color||'#ffd54f'} 22%,${item.color||'#ffd54f'} 58%,#34152c 100%)`;el.classList.remove("fly");void el.offsetWidth;el.classList.add("fly");setTimeout(()=>{document.getElementById("flash").classList.add("show");setTimeout(()=>document.getElementById("flash").classList.remove("show"),600);el.classList.remove("fly");resolve()},1280)})}
 function showFallback(data,reason){document.getElementById("fallbackMain").textContent="🎆 花火を打ち上げ！";document.getElementById("fallbackSub").textContent=reason||`${safe(data.name||"名無し")} さん`;document.getElementById("fallback").classList.add("show");setTimeout(()=>document.getElementById("fallback").classList.remove("show"),3500)}
-async function playLaunch(data){if(!/^[A-Za-z]$/.test(data?.type||""))return;if(playing){queued=data;return}playing=true;document.getElementById("captionMessage").textContent=safe(data.message);document.getElementById("caption").classList.add("show");video.src=videoUrl(data.type);showStage(true);let finished=false;const finish=()=>{if(finished)return;finished=true;video.pause();video.removeAttribute("src");video.load();showStage(false);document.getElementById("caption").classList.remove("show");playing=false;setStatus("接続済み・待機中","ready");if(queued){const next=queued;queued=null;setTimeout(()=>playLaunch(next),300)}};video.onerror=()=>{setStatus("動画ファイルが見つかりません","error");showFallback(data,`読み込めません: ${decodeURI(videoUrl(data.type))}`);finish()};video.onended=finish;video.muted=false;try{await video.play();setStatus(`動画${data.type}を再生中`,"ready")}catch(e){
+async function playLaunch(data){if(!/^[A-Za-z]$/.test(data?.type||""))return;if(playing){queued=data;return}playing=true;video.src=videoUrl(data.type);showStage(true);let finished=false;const finish=()=>{if(finished)return;finished=true;video.pause();video.removeAttribute("src");video.load();showStage(false);playing=false;setStatus("接続済み・待機中","ready");if(queued){const next=queued;queued=null;setTimeout(()=>playLaunch(next),300)}};video.onerror=()=>{setStatus("動画ファイルが見つかりません","error");showFallback(data,`読み込めません: ${decodeURI(videoUrl(data.type))}`);finish()};video.onended=finish;video.muted=false;try{await video.play();setStatus(`動画${data.type}を再生中`,"ready")}catch(e){
 // 自動再生がブロックされた場合はミュートで再挑戦（OBSの音声設定で音が出ない環境の保険）
 try{video.muted=true;await video.play();setStatus(`動画${data.type}をミュート再生中（自動再生制限）`,"error")}catch(e2){setStatus("動画を再生できません","error");showFallback(data,"OBSの自動再生・音声設定を確認してください");finish()}}}
 onValue(ref(db,"fireworks/entries"),snap=>{const data=snap.val()||{};entries=Object.entries(data).map(([id,v])=>({id,...v})).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));renderBalls();setStatus(`接続済み・花火玉 ${entries.length}個`,`ready`)},e=>{console.error(e);setStatus("Firebaseの読み込みに失敗","error")});
@@ -134,6 +135,7 @@ onValue(ref(db,"fireworks/currentLaunch"),snap=>{const data=snap.val();if(!initi
 // 夜空に残すミニ花火の上限（古いものから消えます）
 const MINI_LIMIT=45;
 onValue(ref(db,"fireworks/history"),snap=>{const data=snap.val()||{};launched=Object.entries(data).map(([id,v])=>({id,...v})).sort((a,b)=>(a.launchedAt||0)-(b.launchedAt||0)).slice(-MINI_LIMIT);renderMinis()},e=>console.error(e));
+onValue(ref(db,"fireworks/config/weights"),snap=>{const v=snap.val();if(v)weights={...weights,...v}},e=>console.error(e));
 addEventListener("resize",()=>{renderBalls();renderMinis()});
 
 // 起動時に動画フォルダを判定し、?debug=1 なら4本すべての有無を表示します
