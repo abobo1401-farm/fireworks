@@ -11,7 +11,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
   font-family:"Hiragino Sans","Yu Gothic",sans-serif;color:#fff;user-select:none}
 body.debug{background:repeating-conic-gradient(#2a2c38 0 25%,#22242e 0 50%) 0 0/40px 40px}
 
-#wrap{position:fixed;inset:0;display:flex;padding:14px}
+#wrap{position:fixed;inset:0;display:flex;padding:var(--pad,14px)}
 #wrap.h-left{justify-content:flex-start}#wrap.h-center{justify-content:center}#wrap.h-right{justify-content:flex-end}
 #wrap.v-top{align-items:flex-start}#wrap.v-middle{align-items:center}#wrap.v-bottom{align-items:flex-end}
 
@@ -70,7 +70,7 @@ body.debug{background:repeating-conic-gradient(#2a2c38 0 25%,#22242e 0 50%) 0 0/
   justify-content:center;padding:12px;background:rgba(10,12,24,.9);border-top:1px solid #3a3d4c}
 #adminBar.show{display:flex}
 #adminBar button{border:0;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:bold;cursor:pointer;color:#fff}
-.b-plus{background:#2e7d32}.b-minus{background:#4a4d5e}.b-reset{background:#9e3d3d}.b-rare{background:#8a6b1f}
+.b-plus{background:#2e7d32}.b-minus{background:#4a4d5e}.b-hist{background:#2f5d8a}.b-reset{background:#9e3d3d}.b-rare{background:#8a6b1f}
 #adminMsg{align-self:center;font-size:12px;opacity:.7}
 #status{position:fixed;left:12px;top:12px;font-size:13px;padding:6px 10px;border-radius:8px;
   background:rgba(0,0,0,.5);display:none}
@@ -93,6 +93,7 @@ body.debug{background:repeating-conic-gradient(#2a2c38 0 25%,#22242e 0 50%) 0 0/
 <div id="adminBar">
   <button class="b-plus" id="btnPlus">手動 +1</button>
   <button class="b-minus" id="btnMinus">−1</button>
+  <button class="b-hist" id="btnHist">履歴から数え直す</button>
   <button class="b-reset" id="btnReset">0にリセット</button>
   <span id="adminMsg"></span>
 </div>
@@ -114,6 +115,7 @@ const P=new URLSearchParams(location.search);
 const bool=(k,d)=>P.has(k)?!["0","false","off","no"].includes((P.get(k)||"1").toLowerCase()):d;
 const numP=(k,d)=>{const v=parseFloat(P.get(k));return isFinite(v)?v:d};
 const SCALE=Math.min(4,Math.max(.3,numP("scale",1)));
+const PAD=Math.max(0,numP("pad",14));
 const MIN_DIGITS=Math.min(6,Math.max(1,Math.round(numP("digits",2))));
 /* 既定は「枠つきの数字だけ」。ラベルや単位が要るときだけ ?label= ?unit= を付けます */
 const SHOW_RARE=bool("rare",false);
@@ -124,6 +126,7 @@ const SE=bool("se",false);
 const ADMIN=bool("admin",false);
 const DEBUG=bool("debug",false);
 document.documentElement.style.setProperty("--s",SCALE);
+document.documentElement.style.setProperty("--pad",PAD+"px");
 document.getElementById("labelText").textContent=P.get("label")??"";
 document.getElementById("unitText").textContent=P.get("unit")??"";
 if(!document.getElementById("labelText").textContent)document.getElementById("labelText").classList.add("hidden");
@@ -138,7 +141,12 @@ if(SHOW_TYPES)document.getElementById("typeLine").classList.remove("hidden");
 if(!document.getElementById("labelText").textContent&&!document.getElementById("unitText").textContent&&!SHOW_RARE&&!SHOW_TYPES)panel.classList.add("numOnly");
 if(DEBUG){document.body.classList.add("debug");document.getElementById("status").classList.add("show")}
 if(ADMIN)document.getElementById("adminBar").classList.add("show");
-const setStatus=(t,err=false)=>{const s=document.getElementById("status");s.textContent=t;s.className=(DEBUG?"show":"")+(err?" err":"")};
+let lastStatus="";
+function panelSize(){const r=panel.getBoundingClientRect();return `${Math.ceil(r.width+PAD*2)}×${Math.ceil(r.height+PAD*2)}px`}
+const setStatus=(t,err=false)=>{lastStatus=t;const s=document.getElementById("status");
+  s.textContent=DEBUG?`${t} ／ 推奨ソースサイズ ${panelSize()}`:t;
+  s.className=(DEBUG?"show":"")+(err?" err":"")};
+if(DEBUG)addEventListener("resize",()=>setStatus(lastStatus));
 
 /* ===== 表示 ===== */
 const digitsBox=document.getElementById("digits");
@@ -210,14 +218,14 @@ function playSe(rare){
 onValue(ref(db,"fireworks/counter"),snap=>{
   const v=snap.val()||{};
   const total=Number(v.total)||0,rare=Number(v.rare)||0,types=v.types||{};
-  const first=shown.total===null;
+  const first=shown.total===null;const shown0=shown.total;
   const up=!first&&total>shown.total;
   const rareUp=!first&&rare>shown.rare;
   renderDigits(total,up);
   document.getElementById("rareCount").textContent=rare;
   renderTypes(types);
   shown={total,rare,types};
-  if(up)celebrate(rareUp);
+  if(up&&total-shown0===1)celebrate(rareUp);
   setStatus(`接続済み ${total}発`);
 },e=>{console.error(e);setStatus("Firebaseの読み込みに失敗",true)});
 
@@ -240,6 +248,26 @@ onValue(ref(db,"fireworks/currentLaunch"),snap=>{
   }).catch(e=>{console.error(e);setStatus("カウントの書き込みに失敗",true)});
 },e=>console.error(e));
 
+/* ===== すでに打ち上がった分（fireworks/history）の取り込み =====
+   カウンターを初めて使うとき、または合計が0のままのときだけ、
+   履歴の件数を自動で初期値として入れます。
+   一度リセットした後に勝手に戻らないよう seededFromHistory を目印にしています。 */
+let historyCount=0,historySeedDone=false;
+function applyHistory(force){
+  return runTransaction(ref(db,"fireworks/counter"),cur=>{
+    if(!force&&cur&&(cur.seededFromHistory||(Number(cur.total)||0)>0))return; // 取り込み済み → 中止
+    cur=cur||{total:0,lastNonce:""};
+    cur.total=historyCount;
+    cur.seededFromHistory=true;
+    return cur;
+  });
+}
+onValue(ref(db,"fireworks/history"),snap=>{
+  historyCount=Object.keys(snap.val()||{}).length;
+  const b=document.getElementById("btnHist");if(b)b.textContent=`履歴から数え直す（${historyCount}件）`;
+  if(!historySeedDone){historySeedDone=true;if(historyCount>0)applyHistory(false).catch(e=>console.error(e))}
+},e=>console.error(e));
+
 /* ===== 手動操作（?admin=1） ===== */
 const adminMsg=document.getElementById("adminMsg");
 const flashMsg=t=>{adminMsg.textContent=t;setTimeout(()=>adminMsg.textContent="",2000)};
@@ -250,9 +278,13 @@ const bump=dTotal=>runTransaction(ref(db,"fireworks/counter"),cur=>{
 });
 document.getElementById("btnPlus").onclick=()=>bump(1).then(()=>flashMsg("+1しました"));
 document.getElementById("btnMinus").onclick=()=>bump(-1).then(()=>flashMsg("−1しました"));
+document.getElementById("btnHist").onclick=()=>{
+  if(!confirm(`打ち上げ履歴の ${historyCount}件 に合わせてカウントを上書きしますか？`))return;
+  applyHistory(true).then(()=>flashMsg("履歴から数え直しました"));
+};
 document.getElementById("btnReset").onclick=()=>{
   if(!confirm("カウントを0に戻しますか？（花火玉・履歴には触れません）"))return;
-  runTransaction(ref(db,"fireworks/counter"),cur=>({total:0,lastNonce:(cur&&cur.lastNonce)||""}))
+  runTransaction(ref(db,"fireworks/counter"),cur=>({total:0,lastNonce:(cur&&cur.lastNonce)||"",seededFromHistory:true}))
     .then(()=>flashMsg("リセットしました"));
 };
 renderDigits(0,false);renderTypes({});
